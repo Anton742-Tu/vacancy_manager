@@ -1,9 +1,10 @@
 import json
 import os
-from typing import List, Optional, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from config.settings import DEFAULT_VACANCIES_FILE
+
 from .models import Vacancy
 
 
@@ -18,7 +19,7 @@ class DataManager:
             return []
 
         try:
-            with open(self.data_file, 'r', encoding='utf-8') as f:
+            with open(self.data_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return [Vacancy.from_dict(item) for item in data]
         except (json.JSONDecodeError, FileNotFoundError):
@@ -28,16 +29,13 @@ class DataManager:
         """Сохранение вакансий в файл"""
         data = [vacancy.to_dict() for vacancy in self.vacancies]
 
-        with open(self.data_file, 'w', encoding='utf-8') as f:
+        with open(self.data_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
     def add_vacancies(self, new_vacancies: List[Vacancy]) -> int:
         """Добавление новых вакансий с проверкой дубликатов"""
         existing_ids = {vacancy.id for vacancy in self.vacancies}
-        vacancies_to_add = [
-            vacancy for vacancy in new_vacancies
-            if vacancy.id not in existing_ids
-        ]
+        vacancies_to_add = [vacancy for vacancy in new_vacancies if vacancy.id not in existing_ids]
 
         self.vacancies.extend(vacancies_to_add)
         self.save_vacancies()

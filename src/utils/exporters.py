@@ -1,9 +1,10 @@
-import pandas as pd
+import json
 from typing import List
-from pathlib import Path
 
-from ..core.models import Vacancy
+import pandas as pd
+
 from config.settings import EXPORTS_DIR
+from ..core.models import Vacancy
 
 
 class ExcelExporter:
@@ -17,19 +18,21 @@ class ExcelExporter:
             salary_to = vacancy.salary.to_amount if vacancy.salary else None
             currency = vacancy.salary.currency if vacancy.salary else None
 
-            data.append({
-                'ID': vacancy.id,
-                'Название': vacancy.name,
-                'Компания': vacancy.company,
-                'Зарплата от': salary_from,
-                'Зарплата до': salary_to,
-                'Валюта': currency,
-                'Город': vacancy.area,
-                'Опыт': vacancy.experience,
-                'Тип занятости': vacancy.employment,
-                'Ссылка': vacancy.url,
-                'Источник': vacancy.source
-            })
+            data.append(
+                {
+                    "ID": vacancy.id,
+                    "Название": vacancy.name,
+                    "Компания": vacancy.company,
+                    "Зарплата от": salary_from,
+                    "Зарплата до": salary_to,
+                    "Валюта": currency,
+                    "Город": vacancy.area,
+                    "Опыт": vacancy.experience,
+                    "Тип занятости": vacancy.employment,
+                    "Ссылка": vacancy.url,
+                    "Источник": vacancy.source,
+                }
+            )
 
         df = pd.DataFrame(data)
         filepath = EXPORTS_DIR / filename
@@ -44,7 +47,7 @@ class JSONExporter:
         data = [vacancy.to_dict() for vacancy in vacancies]
         filepath = EXPORTS_DIR / filename
 
-        with open(filepath, 'w', encoding='utf-8') as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
         return str(filepath)
