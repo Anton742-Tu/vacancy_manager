@@ -1,6 +1,6 @@
-# tests/test_filters.py
 import unittest
-from src.core.models import Vacancy, Salary
+
+from src.core.models import Salary, Vacancy
 from src.utils.filters import VacancyFilter
 
 
@@ -16,7 +16,7 @@ class TestFilters(unittest.TestCase):
                 salary=Salary(from_amount=100000, to_amount=150000),
                 area="Moscow",
                 experience="1-3 года",
-                employment="полная занятость"
+                employment="полная занятость",
             ),
             Vacancy(
                 id="2",
@@ -25,7 +25,7 @@ class TestFilters(unittest.TestCase):
                 salary=Salary(from_amount=120000, to_amount=180000),
                 area="Saint Petersburg",
                 experience="3-6 лет",
-                employment="полная занятость"
+                employment="полная занятость",
             ),
             Vacancy(
                 id="3",
@@ -34,8 +34,8 @@ class TestFilters(unittest.TestCase):
                 salary=Salary(from_amount=150000, to_amount=250000),
                 area="Moscow",
                 experience="более 6 лет",
-                employment="удаленная работа"
-            )
+                employment="удаленная работа",
+            ),
         ]
 
         self.filter = VacancyFilter()
