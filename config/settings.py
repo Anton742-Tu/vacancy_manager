@@ -1,5 +1,5 @@
-import os
 from pathlib import Path
+import logging
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,3 +20,19 @@ HH_API_AREA_RUSSIA = 113
 DEFAULT_VACANCIES_FILE = DATA_DIR / "vacancies.json"
 DEFAULT_EXPORT_FILE = EXPORTS_DIR / "vacancies.xlsx"
 MAX_VACANCIES_PER_REQUEST = 100
+
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(exist_ok=True)
+
+LOG_LEVEL = logging.INFO
+LOG_FILE = LOG_DIR / 'vacancy_manager.log'
+
+# Настройка логирования
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)

@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional, Union, cast
+import logging
+import time
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -6,84 +8,98 @@ from config.settings import HH_API_AREA_RUSSIA, HH_API_BASE_URL, HH_API_TIMEOUT
 
 from .models import Salary, Vacancy
 
-# Тип для параметров запроса
-RequestParams = Dict[str, Union[str, int, float, None]]
+logger = logging.getLogger(__name__)
 
 
 class HHruAPIClient:
     def __init__(self):
         self.base_url = HH_API_BASE_URL
         self.timeout = HH_API_TIMEOUT
+        self.session = requests.Session()
+        self.session.headers.update({"User-Agent": "VacancyManager/1.0"})
 
     def search_vacancies(
         self, query: str, area: int = HH_API_AREA_RUSSIA, per_page: int = 50, page: int = 0
     ) -> List[Vacancy]:
         """
-        Поиск вакансий на hh.ru
+        Поиск вакансий на hh.ru с оптимизацией
         """
-        params: RequestParams = {"text": query, "area": area, "per_page": per_page, "page": page}
+        params: Dict[str, Any] = {"text": query, "area": area, "per_page": min(per_page, 100), "page": page}
+
+        logger.info(f"Поиск вакансий: {query}, страница {page}")
+        start_time = time.time()  # Правильно!
 
         try:
-            # Явно указываем тип для response
-            response: requests.Response = requests.get(
-                self.base_url, params=params, timeout=self.timeout  # Теперь mypy будет доволен
-            )
+            response = self.session.get(self.base_url, params=params, timeout=self.timeout)
             response.raise_for_status()
-            data: Dict[str, Any] = response.json()
 
-            return self._parse_vacancies(data.get("items", []))
+            data = response.json()
+            vacancies = self._parse_vacancies(data.get("items", []))
+
+            elapsed = time.time() - start_time
+            logger.info(f"Найдено {len(vacancies)} вакансий за {elapsed:.2f} сек")
+
+            return vacancies
 
         except requests.RequestException as e:
-            raise Exception(f"Ошибка при запросе к API hh.ru: {e}")
+            logger.error(f"Ошибка при запросе к API hh.ru: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка: {e}")
+            return []
 
     def _parse_vacancies(self, items: List[Dict[str, Any]]) -> List[Vacancy]:
-        """Парсинг вакансий из ответа API"""
-        vacancies: List[Vacancy] = []
+        """Быстрый парсинг вакансий"""
+        vacancies = []
 
         for item in items:
             try:
-                vacancy = self._parse_vacancy_item(item)
-                vacancies.append(vacancy)
+                vacancy = self._parse_vacancy_item_fast(item)
+                if vacancy:  # Проверяем, что вакансия корректна
+                    vacancies.append(vacancy)
             except Exception as e:
-                print(f"Ошибка при парсинге вакансии {item.get('id')}: {e}")
+                logger.warning(f"Ошибка парсинга вакансии {item.get('id')}: {e}")
+                continue
 
         return vacancies
 
-    def _parse_vacancy_item(self, item: Dict[str, Any]) -> Vacancy:
-        """Парсинг одной вакансии"""
-        salary_data: Optional[Dict[str, Any]] = item.get("salary")
-        salary: Optional[Salary] = None
+    def _parse_vacancy_item_fast(self, item: Dict[str, Any]) -> Optional[Vacancy]:
+        """Быстрый парсинг одной вакансии"""
+        try:
+            # Быстрая проверка обязательных полей
+            if not all(key in item for key in ["id", "name", "employer", "area"]):
+                return None
 
-        if salary_data:
-            salary = Salary(
-                from_amount=salary_data.get("from"),
-                to_amount=salary_data.get("to"),
-                currency=salary_data.get("currency", "RUB"),
-                gross=salary_data.get("gross"),
+            salary_data = item.get("salary")
+            salary = None
+            if salary_data and any(key in salary_data for key in ["from", "to"]):
+                salary = Salary(
+                    from_amount=salary_data.get("from"),
+                    to_amount=salary_data.get("to"),
+                    currency=salary_data.get("currency", "RUB"),
+                    gross=salary_data.get("gross"),
+                )
+
+            # Минимальная обработка snippet
+            snippet = ""
+            snippet_data = item.get("snippet")
+            if snippet_data and "requirement" in snippet_data:
+                snippet = str(snippet_data["requirement"])[:200]  # Ограничиваем длину
+
+            return Vacancy(
+                id=str(item["id"]),
+                name=str(item["name"]),
+                company=str(item["employer"]["name"]),
+                salary=salary,
+                area=str(item["area"]["name"]),
+                url=str(item.get("alternate_url", "")),
+                published_at=str(item.get("published_at", "")),
+                snippet=snippet,  # Укороченное описание
+                experience=str(item.get("experience", {}).get("name", "")),
+                employment=str(item.get("employment", {}).get("name", "")),
+                source="hh.ru",
             )
 
-        # Получаем snippet с проверкой на None
-        snippet_data: Optional[Dict[str, Any]] = item.get("snippet")
-        snippet: str = ""
-        if snippet_data:
-            snippet = cast(str, snippet_data.get("requirement", ""))
-
-        # Проверяем обязательные поля
-        employer: Dict[str, Any] = item["employer"]
-        area_data: Dict[str, Any] = item["area"]
-        experience: Dict[str, Any] = item["experience"]
-        employment: Dict[str, Any] = item["employment"]
-
-        return Vacancy(
-            id=str(item["id"]),  # Гарантируем строковый тип
-            name=str(item["name"]),
-            company=str(employer["name"]),
-            salary=salary,
-            area=str(area_data["name"]),
-            url=str(item["alternate_url"]),
-            published_at=str(item["published_at"]),
-            snippet=snippet,
-            experience=str(experience["name"]),
-            employment=str(employment["name"]),
-            source="hh.ru",
-        )
+        except (KeyError, TypeError, ValueError) as e:
+            logger.warning(f"Ошибка быстрого парсинга: {e}")
+            return None

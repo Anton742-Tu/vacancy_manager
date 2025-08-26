@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -15,8 +16,9 @@ class VacancyManager:
         self.api_client = HHruAPIClient()
         self.data_manager = DataManager(data_file)
         self.filter = VacancyFilter()
-        # Убираем отдельные экземпляры, используем статические методы
-        # Или оставляем как есть, но исправляем использование
+        self.excel_exporter = ExcelExporter()
+        self.csv_exporter = CSVExporter()
+        self.json_exporter = JSONExporter()
 
     def search_and_add_vacancies(self, query: str, count: int = 20) -> int:
         """Поиск и добавление вакансий с hh.ru"""
@@ -37,13 +39,13 @@ class VacancyManager:
             )
 
             vacancy = Vacancy(
-                id=f"manual_{vacancy_data.get('id', '')}",
+                id=f"manual_{datetime.now().timestamp()}",
                 name=vacancy_data["name"],
                 company=vacancy_data["company"],
                 salary=salary,
                 area=vacancy_data.get("area", ""),
                 url=vacancy_data.get("url", ""),
-                published_at=vacancy_data.get("published_at", ""),
+                published_at=vacancy_data.get("published_at", datetime.now().isoformat()),
                 snippet=vacancy_data.get("snippet", ""),
                 experience=vacancy_data.get("experience", ""),
                 employment=vacancy_data.get("employment", ""),
@@ -92,20 +94,25 @@ class VacancyManager:
         self.data_manager.clear_all_vacancies()
 
     def export_to_excel(self, filename: str = "vacancies.xlsx") -> str:
-        """Экспорт в Excel"""
+        """Экспорт в Excel - возвращает путь к файлу или сообщение об ошибке"""
         vacancies = self.data_manager.get_all_vacancies()
-        # Используем статический метод напрямую
-        return ExcelExporter.export_to_excel(vacancies, filename)
+        if not vacancies:
+            return "Нет данных для экспорта"
+        return self.excel_exporter.export_to_excel(vacancies, filename)
 
     def export_to_csv(self, filename: str = "vacancies.csv") -> str:
-        """Экспорт в CSV"""
+        """Экспорт в CSV - возвращает путь к файлу или сообщение об ошибке"""
         vacancies = self.data_manager.get_all_vacancies()
-        return CSVExporter.export_to_csv(vacancies, filename)
+        if not vacancies:
+            return "Нет данных для экспорта"
+        return self.csv_exporter.export_to_csv(vacancies, filename)
 
     def export_to_json(self, filename: str = "vacancies_export.json") -> str:
-        """Экспорт в JSON"""
+        """Экспорт в JSON - возвращает путь к файлу или сообщение об ошибке"""
         vacancies = self.data_manager.get_all_vacancies()
-        return JSONExporter.export_to_json(vacancies, filename)
+        if not vacancies:
+            return "Нет данных для экспорта"
+        return self.json_exporter.export_to_json(vacancies, filename)
 
     def get_statistics(self) -> Dict[str, Any]:
         """Получение статистики"""
@@ -116,14 +123,13 @@ class VacancyManager:
 
         from collections import Counter
 
-        # Исправляем опечатку в ключе
-        stats: Dict[str, Any] = {
+        stats = {
             "total": len(vacancies),
             "by_company": Counter(v.company for v in vacancies),
             "by_area": Counter(v.area for v in vacancies),
             "by_experience": Counter(v.experience for v in vacancies),
             "by_employment": Counter(v.employment for v in vacancies),
-            "with_salary": sum(1 for v in vacancies if v.salary),  # Исправлено с 'with_salary'
+            "with_salary": sum(1 for v in vacancies if v.salary),
             "sources": Counter(v.source for v in vacancies),
         }
 
