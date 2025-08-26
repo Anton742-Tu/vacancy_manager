@@ -99,7 +99,6 @@ class CSVExporter:
 
             df = pd.DataFrame(data)
             filepath = EXPORTS_DIR / filename
-
             df.to_csv(filepath, index=False, encoding="utf-8-sig", sep=";")
 
             elapsed = time.time() - start_time

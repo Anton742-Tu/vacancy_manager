@@ -45,3 +45,6 @@ class VacancyFilter:
     def filter_by_custom(vacancies: List[Vacancy], filter_func: Callable[[Vacancy], bool]) -> List[Vacancy]:
         """Пользовательская фильтрация"""
         return list(filter(filter_func, vacancies))
+
+    def apply_filters(self, vacancies, filters):
+        pass
