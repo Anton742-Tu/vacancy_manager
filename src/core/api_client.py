@@ -1,11 +1,13 @@
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, cast
 
 import requests
 
 from config.settings import HH_API_AREA_RUSSIA, HH_API_BASE_URL, HH_API_TIMEOUT
 
 from .models import Salary, Vacancy
+
+# Тип для параметров запроса
+RequestParams = Dict[str, Union[str, int, float, None]]
 
 
 class HHruAPIClient:
@@ -19,21 +21,24 @@ class HHruAPIClient:
         """
         Поиск вакансий на hh.ru
         """
-        params = {"text": query, "area": area, "per_page": per_page, "page": page}
+        params: RequestParams = {"text": query, "area": area, "per_page": per_page, "page": page}
 
         try:
-            response = requests.get(self.base_url, params=params, timeout=self.timeout)
+            # Явно указываем тип для response
+            response: requests.Response = requests.get(
+                self.base_url, params=params, timeout=self.timeout  # Теперь mypy будет доволен
+            )
             response.raise_for_status()
-            data = response.json()
+            data: Dict[str, Any] = response.json()
 
             return self._parse_vacancies(data.get("items", []))
 
         except requests.RequestException as e:
             raise Exception(f"Ошибка при запросе к API hh.ru: {e}")
 
-    def _parse_vacancies(self, items: List[Dict]) -> List[Vacancy]:
+    def _parse_vacancies(self, items: List[Dict[str, Any]]) -> List[Vacancy]:
         """Парсинг вакансий из ответа API"""
-        vacancies = []
+        vacancies: List[Vacancy] = []
 
         for item in items:
             try:
@@ -44,10 +49,11 @@ class HHruAPIClient:
 
         return vacancies
 
-    def _parse_vacancy_item(self, item: Dict) -> Vacancy:
+    def _parse_vacancy_item(self, item: Dict[str, Any]) -> Vacancy:
         """Парсинг одной вакансии"""
-        salary_data = item.get("salary")
-        salary = None
+        salary_data: Optional[Dict[str, Any]] = item.get("salary")
+        salary: Optional[Salary] = None
+
         if salary_data:
             salary = Salary(
                 from_amount=salary_data.get("from"),
@@ -56,16 +62,28 @@ class HHruAPIClient:
                 gross=salary_data.get("gross"),
             )
 
+        # Получаем snippet с проверкой на None
+        snippet_data: Optional[Dict[str, Any]] = item.get("snippet")
+        snippet: str = ""
+        if snippet_data:
+            snippet = cast(str, snippet_data.get("requirement", ""))
+
+        # Проверяем обязательные поля
+        employer: Dict[str, Any] = item["employer"]
+        area_data: Dict[str, Any] = item["area"]
+        experience: Dict[str, Any] = item["experience"]
+        employment: Dict[str, Any] = item["employment"]
+
         return Vacancy(
-            id=item["id"],
-            name=item["name"],
-            company=item["employer"]["name"],
+            id=str(item["id"]),  # Гарантируем строковый тип
+            name=str(item["name"]),
+            company=str(employer["name"]),
             salary=salary,
-            area=item["area"]["name"],
-            url=item["alternate_url"],
-            published_at=item["published_at"],
-            snippet=item["snippet"].get("requirement", "") if item.get("snippet") else "",
-            experience=item["experience"]["name"],
-            employment=item["employment"]["name"],
+            area=str(area_data["name"]),
+            url=str(item["alternate_url"]),
+            published_at=str(item["published_at"]),
+            snippet=snippet,
+            experience=str(experience["name"]),
+            employment=str(employment["name"]),
             source="hh.ru",
         )

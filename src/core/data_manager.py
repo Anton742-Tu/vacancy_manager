@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -20,9 +19,10 @@ class DataManager:
 
         try:
             with open(self.data_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
+                data: List[Dict[str, Any]] = json.load(f)
                 return [Vacancy.from_dict(item) for item in data]
-        except (json.JSONDecodeError, FileNotFoundError):
+        except (json.JSONDecodeError, FileNotFoundError, KeyError) as e:
+            print(f"Ошибка при загрузке вакансий: {e}")
             return []
 
     def save_vacancies(self) -> None:

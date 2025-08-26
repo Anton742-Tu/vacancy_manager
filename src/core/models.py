@@ -1,5 +1,4 @@
-from dataclasses import asdict, dataclass
-from datetime import datetime
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 
@@ -12,6 +11,18 @@ class Salary:
 
     def to_dict(self) -> Dict[str, Any]:
         return {"from": self.from_amount, "to": self.to_amount, "currency": self.currency, "gross": self.gross}
+
+    @classmethod
+    def from_dict(cls, data: Optional[Dict[str, Any]]) -> Optional["Salary"]:
+        if not data:
+            return None
+
+        return cls(
+            from_amount=data.get("from"),
+            to_amount=data.get("to"),
+            currency=data.get("currency", "RUB"),
+            gross=data.get("gross"),
+        )
 
 
 @dataclass
@@ -26,7 +37,7 @@ class Vacancy:
     snippet: str = ""
     experience: str = ""
     employment: str = ""
-    source: str = "hh.ru"  # или "manual"
+    source: str = "hh.ru"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -46,25 +57,18 @@ class Vacancy:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Vacancy":
         salary_data = data.get("salary")
-        salary = None
-        if salary_data:
-            salary = Salary(
-                from_amount=salary_data.get("from"),
-                to_amount=salary_data.get("to"),
-                currency=salary_data.get("currency", "RUB"),
-                gross=salary_data.get("gross"),
-            )
+        salary = Salary.from_dict(salary_data) if salary_data else None
 
         return cls(
-            id=data["id"],
-            name=data["name"],
-            company=data["company"],
+            id=str(data["id"]),
+            name=str(data["name"]),
+            company=str(data["company"]),
             salary=salary,
-            area=data.get("area", ""),
-            url=data.get("url", ""),
-            published_at=data.get("published_at", ""),
-            snippet=data.get("snippet", ""),
-            experience=data.get("experience", ""),
-            employment=data.get("employment", ""),
-            source=data.get("source", "hh.ru"),
+            area=str(data.get("area", "")),
+            url=str(data.get("url", "")),
+            published_at=str(data.get("published_at", "")),
+            snippet=str(data.get("snippet", "")),
+            experience=str(data.get("experience", "")),
+            employment=str(data.get("employment", "")),
+            source=str(data.get("source", "hh.ru")),
         )

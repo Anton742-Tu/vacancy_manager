@@ -1,8 +1,6 @@
-import json
 from datetime import datetime
 from typing import Any, Dict
 
-from config.settings import DEFAULT_VACANCIES_FILE
 from src.main import VacancyManager
 
 
@@ -45,7 +43,7 @@ def get_manual_vacancy_input() -> Dict[str, Any]:
     print("\n📝 Добавление вакансии вручную")
     print("=" * 50)
 
-    vacancy_data = {
+    vacancy_data: Dict[str, Any] = {
         "name": input("Название вакансии: ").strip(),
         "company": input("Компания: ").strip(),
         "area": input("Город: ").strip(),
@@ -63,10 +61,10 @@ def get_manual_vacancy_input() -> Dict[str, Any]:
     currency = input("Валюта (RUB/USD/EUR, по умолчанию RUB): ").strip() or "RUB"
 
     if salary_from:
-        vacancy_data["salary"]["from"] = int(salary_from)
+        vacancy_data["salary"]["from"] = int(salary_from)  # type: ignore
     if salary_to:
-        vacancy_data["salary"]["to"] = int(salary_to)
-    vacancy_data["salary"]["currency"] = currency
+        vacancy_data["salary"]["to"] = int(salary_to)  # type: ignore
+    vacancy_data["salary"]["currency"] = currency  # type: ignore
 
     return vacancy_data
 
@@ -88,12 +86,14 @@ def run_cli():
         print("4. 🎛️  Фильтровать вакансии")
         print("5. ❌ Удалить вакансию")
         print("6. 💾 Экспорт в Excel")
-        print("7. 📊 Статистика")
-        print("8. 🗑️  Очистить все вакансии")
-        print("9. 🚪 Выход")
+        print("7. 📄 Экспорт в CSV")
+        print("8. 📋 Экспорт в JSON")
+        print("9. 📊 Статистика")
+        print("10. 🗑️ Очистить все вакансии")
+        print("11. 🚪 Выход")
         print("=" * 60)
 
-        choice = input("Выберите действие (1-9): ").strip()
+        choice = input("Выберите действие (1-11): ").strip()
 
         if choice == "1":
             try:
@@ -129,7 +129,7 @@ def run_cli():
 
         elif choice == "4":
             print("\n🎛️  Фильтрация вакансий (оставьте поле пустым чтобы пропустить)")
-            filters = {}
+            filters: Dict[str, Any] = {}
 
             company = input("Компания: ").strip()
             if company:
@@ -162,7 +162,12 @@ def run_cli():
 
             display_vacancies(vacancies)
             try:
-                idx = int(input("\nНомер вакансии для удаления: ")) - 1
+                idx_input = input("\nНомер вакансии для удаления: ").strip()
+                if not idx_input.isdigit():
+                    print("❌ Введите число!")
+                    continue
+
+                idx = int(idx_input) - 1
                 if 0 <= idx < len(vacancies):
                     vacancy_id = vacancies[idx].id
                     if manager.delete_vacancy(vacancy_id):
@@ -172,7 +177,7 @@ def run_cli():
                 else:
                     print("❌ Неверный номер!")
             except ValueError:
-                print("❌ Введите число!")
+                print("❌ Введите корректное число!")
 
         elif choice == "6":
             try:
@@ -188,6 +193,25 @@ def run_cli():
                 print(f"❌ Ошибка при экспорте: {e}")
 
         elif choice == "7":
+            try:
+                filename = input("Имя файла (по умолчанию vacancies.csv): ").strip()
+                filename = filename if filename else "vacancies.csv"
+                filepath = manager.export_to_csv(filename)
+                print(f"✅ Данные экспортированы в CSV: {filepath}")
+                print("💡 Совет: Откройте файл в Excel с указанием кодировки UTF-8")
+            except Exception as e:
+                print(f"❌ Ошибка при экспорте в CSV: {e}")
+
+        elif choice == "8":
+            try:
+                filename = input("Имя файла (по умолчанию vacancies.json): ").strip()
+                filename = filename if filename else "vacancies.json"
+                filepath = manager.export_to_json(filename)
+                print(f"✅ Данные экспортированы в JSON: {filepath}")
+            except Exception as e:
+                print(f"❌ Ошибка при экспорте в JSON: {e}")
+
+        elif choice == "9":
             stats = manager.get_statistics()
             if not stats:
                 print("❌ Нет данных для статистики")
@@ -196,7 +220,7 @@ def run_cli():
             print("\n📊 СТАТИСТИКА ВАКАНСИЙ")
             print("=" * 40)
             print(f"Всего вакансий: {stats['total']}")
-            print(f"С указанной зарплатой: {stats['with_salary']}")
+            print(f"С указанной зарплата: {stats['with_salary']}")
             print(f"Источники: {dict(stats['sources'])}")
 
             print("\n🏢 Топ компаний:")
@@ -207,7 +231,7 @@ def run_cli():
             for area, count in stats["by_area"].most_common(5):
                 print(f"  {area}: {count}")
 
-        elif choice == "8":
+        elif choice == "10":
             confirm = input("❌ Вы уверены? Это удалит ВСЕ вакансии! (y/n): ").strip().lower()
             if confirm == "y":
                 manager.clear_all_vacancies()
@@ -215,7 +239,7 @@ def run_cli():
             else:
                 print("Отменено")
 
-        elif choice == "9":
+        elif choice == "11":
             print("👋 До свидания!")
             break
 

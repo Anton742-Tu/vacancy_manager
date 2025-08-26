@@ -6,7 +6,7 @@ from config.settings import MAX_VACANCIES_PER_REQUEST
 from .core.api_client import HHruAPIClient
 from .core.data_manager import DataManager
 from .core.models import Salary, Vacancy
-from .utils.exporters import ExcelExporter, JSONExporter
+from .utils.exporters import CSVExporter, ExcelExporter, JSONExporter
 from .utils.filters import VacancyFilter
 
 
@@ -15,7 +15,8 @@ class VacancyManager:
         self.api_client = HHruAPIClient()
         self.data_manager = DataManager(data_file)
         self.filter = VacancyFilter()
-        self.exporter = ExcelExporter()
+        # Убираем отдельные экземпляры, используем статические методы
+        # Или оставляем как есть, но исправляем использование
 
     def search_and_add_vacancies(self, query: str, count: int = 20) -> int:
         """Поиск и добавление вакансий с hh.ru"""
@@ -93,7 +94,18 @@ class VacancyManager:
     def export_to_excel(self, filename: str = "vacancies.xlsx") -> str:
         """Экспорт в Excel"""
         vacancies = self.data_manager.get_all_vacancies()
-        return self.exporter.export_to_excel(vacancies, filename)
+        # Используем статический метод напрямую
+        return ExcelExporter.export_to_excel(vacancies, filename)
+
+    def export_to_csv(self, filename: str = "vacancies.csv") -> str:
+        """Экспорт в CSV"""
+        vacancies = self.data_manager.get_all_vacancies()
+        return CSVExporter.export_to_csv(vacancies, filename)
+
+    def export_to_json(self, filename: str = "vacancies_export.json") -> str:
+        """Экспорт в JSON"""
+        vacancies = self.data_manager.get_all_vacancies()
+        return JSONExporter.export_to_json(vacancies, filename)
 
     def get_statistics(self) -> Dict[str, Any]:
         """Получение статистики"""
@@ -104,13 +116,14 @@ class VacancyManager:
 
         from collections import Counter
 
-        stats = {
+        # Исправляем опечатку в ключе
+        stats: Dict[str, Any] = {
             "total": len(vacancies),
-            "by_company": Counter(v.area for v in vacancies),
+            "by_company": Counter(v.company for v in vacancies),
             "by_area": Counter(v.area for v in vacancies),
             "by_experience": Counter(v.experience for v in vacancies),
             "by_employment": Counter(v.employment for v in vacancies),
-            "with_salary": sum(1 for v in vacancies if v.salary),
+            "with_salary": sum(1 for v in vacancies if v.salary),  # Исправлено с 'with_salary'
             "sources": Counter(v.source for v in vacancies),
         }
 
