@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from config.settings import HH_API_AREA_RUSSIA, HH_API_BASE_URL, HH_API_TIMEOUT
+from config.settings import HH_API_AREA_RUSSIA, HH_API_BASE_URL, HH_API_TIMEOUT, HH_API_USER_AGENT
 
 from .models import Salary, Vacancy
 
@@ -16,18 +16,16 @@ class HHruAPIClient:
         self.base_url = HH_API_BASE_URL
         self.timeout = HH_API_TIMEOUT
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "VacancyManager/1.0"})
+        self.session.headers.update({"User-Agent": HH_API_USER_AGENT})
 
     def search_vacancies(
         self, query: str, area: int = HH_API_AREA_RUSSIA, per_page: int = 50, page: int = 0
     ) -> List[Vacancy]:
-        """
-        Поиск вакансий на hh.ru с оптимизацией
-        """
-        params: Dict[str, Any] = {"text": query, "area": area, "per_page": min(per_page, 100), "page": page}
+        """Поиск вакансий на hh.ru"""
+        params: Dict[str, Any] = {"text": query, "area": area, "per_page": per_page, "page": page}
 
-        logger.info(f"Поиск вакансий: {query}, страница {page}")
-        start_time = time.time()  # Правильно!
+        logger.info(f"Поиск вакансий: '{query}', страница {page}")
+        start_time = time.time()
 
         try:
             response = self.session.get(self.base_url, params=params, timeout=self.timeout)

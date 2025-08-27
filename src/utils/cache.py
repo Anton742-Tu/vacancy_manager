@@ -1,20 +1,21 @@
+import hashlib
+import json
 import logging
 import time
 from typing import Any, Dict, List, Optional
-import hashlib
-import json
 
-from ..core.models import Vacancy
+from config.settings import CACHE_TTL, MAX_CACHE_SIZE
+from src.core.models import Vacancy
 
 logger = logging.getLogger(__name__)
 
 
 class CacheManager:
-    def __init__(self, max_size: int = 1000, ttl: int = 300):
+    def __init__(self, max_size: int = None, ttl: int = None):
         self.cache: Dict[str, Any] = {}
         self.timestamps: Dict[str, float] = {}
-        self.max_size = max_size
-        self.ttl = ttl
+        self.max_size = max_size or MAX_CACHE_SIZE
+        self.ttl = ttl or CACHE_TTL
 
     def get(self, key: str) -> Optional[Any]:
         """Получение из кэша"""
@@ -54,6 +55,7 @@ def get_cached_vacancies(vacancies: List[Vacancy], filters: Dict[str, Any]) -> L
         return cached
 
     from .filters import VacancyFilter
+
     filtered = VacancyFilter().apply_filters(vacancies, filters)
 
     cache.set(cache_key, filtered)

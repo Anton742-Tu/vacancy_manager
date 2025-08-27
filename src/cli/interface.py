@@ -1,6 +1,6 @@
-from datetime import datetime
 from typing import Any, Dict
 
+from config.settings import DISPLAY_WIDTH, EMOJIS, MESSAGES
 from src.main import VacancyManager
 
 
@@ -16,20 +16,20 @@ def display_vacancy(vacancy) -> None:
         elif salary.to_amount:
             salary_str = f"до {salary.to_amount} {salary.currency}"
 
-    print(f"\n📋 {vacancy.name}")
-    print(f"   🏢 Компания: {vacancy.company}")
-    print(f"   💰 Зарплата: {salary_str}")
-    print(f"   📍 Город: {vacancy.area}")
-    print(f"   🎯 Опыт: {vacancy.experience}")
-    print(f"   🔗 Ссылка: {vacancy.url}")
-    print(f"   📅 Опубликована: {vacancy.published_at[:10]}")
-    print("-" * 60)
+    print(f"\n{EMOJIS['vacancy']} {vacancy.name}")
+    print(f"   {EMOJIS['company']} Компания: {vacancy.company}")
+    print(f"   {EMOJIS['salary']} Зарплата: {salary_str}")
+    print(f"   {EMOJIS['city']} Город: {vacancy.area}")
+    print(f"   {EMOJIS['experience']} Опыт: {vacancy.experience}")
+    print(f"   {EMOJIS['link']} Ссылка: {vacancy.url}")
+    print(f"   {EMOJIS['date']} Опубликована: {vacancy.published_at[:10]}")
+    print("-" * DISPLAY_WIDTH)
 
 
 def display_vacancies(vacancies) -> None:
     """Отображение списка вакансий"""
     if not vacancies:
-        print("❌ Нет вакансий для отображения")
+        print(MESSAGES["no_vacancies"])
         return
 
     print(f"\n📊 Найдено вакансий: {len(vacancies)}")
@@ -38,60 +38,33 @@ def display_vacancies(vacancies) -> None:
         display_vacancy(vacancy)
 
 
-def get_manual_vacancy_input() -> Dict[str, Any]:
-    """Получение данных для ручного добавления вакансии"""
-    print("\n📝 Добавление вакансии вручную")
-    print("=" * 50)
-
-    vacancy_data: Dict[str, Any] = {
-        "name": input("Название вакансии: ").strip(),
-        "company": input("Компания: ").strip(),
-        "area": input("Город: ").strip(),
-        "url": input("Ссылка на вакансию: ").strip(),
-        "experience": input("Требуемый опыт: ").strip(),
-        "employment": input("Тип занятости: ").strip(),
-        "snippet": input("Описание: ").strip(),
-        "published_at": datetime.now().isoformat(),
-        "salary": {},
-    }
-
-    # Данные о зарплате
-    salary_from = input("Зарплата от (или Enter чтобы пропустить): ").strip()
-    salary_to = input("Зарплата до (или Enter чтобы пропустить): ").strip()
-    currency = input("Валюта (RUB/USD/EUR, по умолчанию RUB): ").strip() or "RUB"
-
-    if salary_from:
-        vacancy_data["salary"]["from"] = int(salary_from)  # type: ignore
-    if salary_to:
-        vacancy_data["salary"]["to"] = int(salary_to)  # type: ignore
-    vacancy_data["salary"]["currency"] = currency  # type: ignore
-
-    return vacancy_data
+def get_manual_vacancy_input():
+    pass
 
 
 def run_cli():
     """Запуск CLI интерфейса"""
-    print("🚀 Запуск менеджера вакансий HH.ru")
-    print("=" * 50)
+    print(MESSAGES["welcome"])
+    print("=" * DISPLAY_WIDTH)
 
     manager = VacancyManager()
 
     while True:
-        print("\n" + "=" * 60)
+        print("\n" + "=" * DISPLAY_WIDTH)
         print("🎯 МЕНЕДЖЕР ВАКАНСИЙ HH.RU")
-        print("=" * 60)
-        print("1. 🔍 Поиск и добавление вакансий с hh.ru")
-        print("2. 📝 Добавить вакансию вручную")
-        print("3. 👀 Показать все вакансии")
-        print("4. 🎛️  Фильтровать вакансии")
-        print("5. ❌ Удалить вакансию")
-        print("6. 💾 Экспорт в Excel")
-        print("7. 📄 Экспорт в CSV")
-        print("8. 📋 Экспорт в JSON")
-        print("9. 📊 Статистика")
-        print("10. 🗑️ Очистить все вакансии")
-        print("11. 🚪 Выход")
-        print("=" * 60)
+        print("=" * DISPLAY_WIDTH)
+        print(f"1. {EMOJIS['search']} Поиск и добавление вакансий с hh.ru")
+        print(f"2. {EMOJIS['add']} Добавить вакансию вручную")
+        print(f"3. {EMOJIS['view']} Показать все вакансии")
+        print(f"4. {EMOJIS['filter']} Фильтровать вакансии")
+        print(f"5. {EMOJIS['delete']} Удалить вакансию")
+        print(f"6. {EMOJIS['export']} Экспорт в Excel")
+        print(f"7. {EMOJIS['export']} Экспорт в CSV")
+        print(f"8. {EMOJIS['export']} Экспорт в JSON")
+        print(f"9. {EMOJIS['stats']} Статистика")
+        print(f"10. {EMOJIS['clear']} Очистить все вакансии")
+        print(f"11. {EMOJIS['exit']} Выход")
+        print("=" * DISPLAY_WIDTH)
 
         choice = input("Выберите действие (1-11): ").strip()
 
@@ -105,12 +78,12 @@ def run_cli():
                 count_input = input("Количество вакансий (по умолчанию 20, макс 100): ").strip()
                 count = min(int(count_input) if count_input.isdigit() else 20, 100)
 
-                print(f"🔍 Поиск вакансий '{query}'...")
+                print(f"{EMOJIS['search']} Поиск вакансий '{query}'...")
                 added_count = manager.search_and_add_vacancies(query, count)
                 print(f"✅ Добавлено {added_count} новых вакансий")
 
             except Exception as e:
-                print(f"❌ Ошибка при поиске вакансий: {e}")
+                print(MESSAGES["error_api"].format(e))
 
         elif choice == "2":
             try:

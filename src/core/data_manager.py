@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import List, Optional, Set
 
-from config.settings import DEFAULT_VACANCIES_FILE
+from config.settings import VACANCIES_FILE
 
 from .models import Vacancy
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class DataManager:
     def __init__(self, data_file: Optional[Path] = None):
-        self.data_file = data_file or DEFAULT_VACANCIES_FILE
+        self.data_file = data_file or VACANCIES_FILE
         self.vacancies: List[Vacancy] = []
         self._vacancy_ids: Set[str] = set()
         self._load_vacancies()
