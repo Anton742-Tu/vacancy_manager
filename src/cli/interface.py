@@ -2,9 +2,8 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from config.settings import DISPLAY_WIDTH, EMOJIS, MESSAGES
-from core.api_client import logger
 from src.core.models import Vacancy  # Добавляем импорт для типизации
-from src.main import VacancyManager
+from src.main import VacancyManager, logger
 
 
 def display_vacancy(vacancy: Vacancy) -> None:
@@ -162,7 +161,6 @@ def run_cli() -> None:
 
             filtered_results: List[Vacancy] = manager.get_vacancies(filters)
             display_vacancies(filtered_results)
-
 
         elif choice == "5":
             all_vacancies: List[Vacancy] = manager.get_vacancies()  # Меняем имя переменной

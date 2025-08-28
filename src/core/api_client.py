@@ -4,14 +4,11 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from config.settings import HH_API_BASE_URL, HH_API_TIMEOUT, HH_API_USER_AGENT, HH_API_AREA_RUSSIA
-from .models import Vacancy
+from config.settings import HH_API_AREA_RUSSIA, HH_API_BASE_URL, HH_API_TIMEOUT, HH_API_USER_AGENT
+
+from .models import Salary, Vacancy  # Явно импортируем Salary из models
 
 logger = logging.getLogger(__name__)
-
-
-class Salary:
-    pass
 
 
 class HHruAPIClient:
@@ -19,21 +16,18 @@ class HHruAPIClient:
         self.base_url = HH_API_BASE_URL
         self.timeout = HH_API_TIMEOUT
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": HH_API_USER_AGENT,
-            "Accept": "application/json",
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": HH_API_USER_AGENT,
+                "Accept": "application/json",
+            }
+        )
 
     def search_vacancies(
-            self, query: str, area: int = HH_API_AREA_RUSSIA, per_page: int = 50, page: int = 0
+        self, query: str, area: int = HH_API_AREA_RUSSIA, per_page: int = 50, page: int = 0
     ) -> List[Vacancy]:
         """Поиск вакансий на hh.ru"""
-        params: Dict[str, Any] = {
-            "text": query,
-            "area": area,
-            "per_page": per_page,
-            "page": page
-        }
+        params: Dict[str, Any] = {"text": query, "area": area, "per_page": per_page, "page": page}
 
         logger.info(f"Поиск вакансий: '{query}', страница {page}")
         start_time = time.time()
@@ -61,7 +55,7 @@ class HHruAPIClient:
 
         except requests.RequestException as e:
             logger.error(f"Ошибка при запросе к API hh.ru: {e}")
-            if hasattr(e, 'response') and e.response is not None:
+            if hasattr(e, "response") and e.response is not None:
                 logger.error(f"Статус код: {e.response.status_code}")
                 logger.error(f"Ответ сервера: {e.response.text[:500]}...")
             return []
@@ -128,8 +122,6 @@ class HHruAPIClient:
 
     def _parse_salary(self, salary_data: Dict[str, Any]) -> Optional[Salary]:
         """Парсинг данных о зарплате"""
-        from .models import Salary
-
         if not salary_data:
             return None
 
@@ -137,7 +129,7 @@ class HHruAPIClient:
             return Salary(
                 from_amount=salary_data.get("from"),
                 to_amount=salary_data.get("to"),
-                currency=salary_data.get("currency", "RUB"),
+                currency=salary_data.get("currency", "RUB"),  # Исправляем RUR на RUB
                 gross=salary_data.get("gross"),
             )
         except Exception as e:

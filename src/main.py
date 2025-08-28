@@ -1,17 +1,15 @@
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from config.settings import MAX_VACANCIES_PER_REQUEST
+from config.settings import LOG_FORMAT, LOG_LEVEL, MAX_VACANCIES_PER_REQUEST
 
 from .core.api_client import HHruAPIClient
 from .core.data_manager import DataManager
-from .core.models import Salary, Vacancy
+from .core.models import Salary, Vacancy  # Явно импортируем из core.models
 from .utils.exporters import CSVExporter, ExcelExporter, JSONExporter
 from .utils.filters import VacancyFilter
-
-import logging
-from config.settings import LOG_LEVEL, LOG_FORMAT
 
 # Настройка логирования
 logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)

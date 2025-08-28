@@ -5,9 +5,11 @@ from pathlib import Path
 from typing import List, Optional, Set
 
 from config.settings import VACANCIES_FILE
+
 from .models import Vacancy
 
 logger = logging.getLogger(__name__)
+
 
 class DataManager:
     def __init__(self, data_file: Optional[Path] = None):
@@ -15,32 +17,6 @@ class DataManager:
         self.vacancies: List[Vacancy] = []
         self._vacancy_ids: Set[str] = set()
         self._load_vacancies()
-
-    def add_vacancies(self, new_vacancies: List[Vacancy]) -> int:
-        """Быстрое добавление с проверкой дубликатов и логированием"""
-        if not new_vacancies:
-            return 0
-
-        vacancies_to_add = [vacancy for vacancy in new_vacancies if vacancy.id not in self._vacancy_ids]
-
-        if not vacancies_to_add:
-            logger.info("Все вакансии уже существуют, новых не добавлено")
-            logger.debug(f"Попытка добавить вакансии: {[v.id for v in new_vacancies]}")
-            logger.debug(f"Существующие ID: {list(self._vacancy_ids)[:5]}...")  # Первые 5 ID
-            return 0
-
-        logger.info(f"Добавление {len(vacancies_to_add)} новых вакансий из {len(new_vacancies)}")
-        logger.debug(f"Новые ID: {[v.id for v in vacancies_to_add]}")
-
-        # Добавляем в память
-        for vacancy in vacancies_to_add:
-            self.vacancies.append(vacancy)
-            self._vacancy_ids.add(vacancy.id)
-
-        # Сохраняем
-        self.save_vacancies()
-
-        return len(vacancies_to_add)
 
     def _load_vacancies(self) -> None:
         """Быстрая загрузка вакансий"""
