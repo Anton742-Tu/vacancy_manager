@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict
+import logging
 
 
 # Пути и директории
@@ -19,8 +20,11 @@ HH_API_AREA_RUSSIA = 113  # Код России в HH API
 HH_API_USER_AGENT = "VacancyManager/1.0 (Tumashovster@Gmail.com)"
 
 # Настройки логирования
-LOG_LEVEL = "INFO"  # Можете изменить на "DEBUG" для детального логирования
+LOG_LEVEL = logging.INFO # Можете изменить на "DEBUG" для детального логирования
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Настройка базового логирования
+logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
 
 # Лимиты
 MAX_VACANCIES_PER_REQUEST = 100
