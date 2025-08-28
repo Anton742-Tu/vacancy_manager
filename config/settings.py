@@ -16,7 +16,7 @@ LOG_FILE = LOGS_DIR / "vacancy_manager.log"
 HH_API_BASE_URL = "https://api.hh.ru/vacancies"
 HH_API_TIMEOUT = 30
 HH_API_AREA_RUSSIA = 113  # Код России в HH API
-HH_API_USER_AGENT = "VacancyManager/1.0 (your-email@example.com)"
+HH_API_USER_AGENT = "VacancyManager/1.0 (Tumashovster@Gmail.com)"
 
 # Лимиты
 MAX_VACANCIES_PER_REQUEST = 100

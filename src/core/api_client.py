@@ -1,12 +1,12 @@
 import logging
 import time
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote_plus  # Добавляем импорт
 
 import requests
 
-from config.settings import HH_API_AREA_RUSSIA, HH_API_BASE_URL, HH_API_TIMEOUT, HH_API_USER_AGENT
-
-from .models import Salary, Vacancy
+from config.settings import HH_API_BASE_URL, HH_API_TIMEOUT, HH_API_USER_AGENT, HH_API_AREA_RUSSIA
+from .models import Vacancy, Salary
 
 logger = logging.getLogger(__name__)
 
@@ -16,20 +16,32 @@ class HHruAPIClient:
         self.base_url = HH_API_BASE_URL
         self.timeout = HH_API_TIMEOUT
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": HH_API_USER_AGENT})
+        self.session.headers.update({
+            "User-Agent": HH_API_USER_AGENT,
+            "Accept": "application/json",  # Явно указываем, что хотим JSON
+            "Accept-Encoding": "gzip, deflate",
+        })
 
     def search_vacancies(
-        self, query: str, area: int = HH_API_AREA_RUSSIA, per_page: int = 50, page: int = 0
+            self, query: str, area: int = HH_API_AREA_RUSSIA, per_page: int = 50, page: int = 0
     ) -> List[Vacancy]:
-        """Поиск вакансий на hh.ru"""
-        params: Dict[str, Any] = {"text": query, "area": area, "per_page": per_page, "page": page}
+        """Поиск вакансий на hh.ru с правильным кодированием"""
+        # Кодируем запрос для URL
+        encoded_query = quote_plus(query)
+
+        params: Dict[str, Any] = {
+            "text": encoded_query,  # Используем закодированный запрос
+            "area": area,
+            "per_page": per_page,
+            "page": page
+        }
 
         logger.info(f"Поиск вакансий: '{query}', страница {page}")
         start_time = time.time()
 
         try:
             response = self.session.get(self.base_url, params=params, timeout=self.timeout)
-            response.raise_for_status()
+            response.raise_for_status()  # Это выбросит исключение для 4xx/5xx статусов
 
             data = response.json()
             vacancies = self._parse_vacancies(data.get("items", []))
@@ -41,6 +53,9 @@ class HHruAPIClient:
 
         except requests.RequestException as e:
             logger.error(f"Ошибка при запросе к API hh.ru: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                logger.error(f"Статус код: {e.response.status_code}")
+                logger.error(f"Ответ сервера: {e.response.text}")
             return []
         except Exception as e:
             logger.error(f"Неожиданная ошибка: {e}")

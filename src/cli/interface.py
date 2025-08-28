@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from config.settings import DISPLAY_WIDTH, EMOJIS, MESSAGES
+from core.api_client import logger
 from src.core.models import Vacancy  # Добавляем импорт для типизации
 from src.main import VacancyManager
 
@@ -109,10 +110,16 @@ def run_cli() -> None:
 
                 print(f"{EMOJIS['search']} Поиск вакансий '{query}'...")
                 added_count = manager.search_and_add_vacancies(query, count)
-                print(f"✅ Добавлено {added_count} новых вакансий")
+
+                if added_count == 0:
+                    print("⚠️  Не найдено новых вакансий. Попробуйте другой запрос.")
+                else:
+                    print(f"✅ Добавлено {added_count} новых вакансий")
 
             except Exception as e:
+                logger.error(f"Ошибка при поиске вакансий: {e}")
                 print(MESSAGES["error_api"].format(e))
+                print("💡 Попробуйте другой поисковый запрос или проверьте соединение с интернетом")
 
         elif choice == "2":
             try:
