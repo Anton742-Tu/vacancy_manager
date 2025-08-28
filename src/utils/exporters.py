@@ -1,4 +1,3 @@
-# src/utils/exporters.py
 import json
 import logging
 import time
@@ -37,7 +36,7 @@ class ExcelExporter:
             # Создаем новую книгу Excel
             wb = Workbook()
             ws = wb.active
-            if ws is not None:  # Проверяем, что worksheet не None
+            if ws is not None:
                 ws.title = "Вакансии"
 
                 # Подготавливаем данные
@@ -48,7 +47,7 @@ class ExcelExporter:
                 for col_idx, header in enumerate(headers, 1):
                     cell = ws.cell(row=1, column=col_idx, value=header)
                     cell.font = Font(bold=True)
-                    cell.alignment = Alignment(horizontal="center")
+                    cell.alignment = Alignment(horizontal='center')
 
                 # Данные
                 for row_idx, row_data in enumerate(data, 2):
@@ -58,8 +57,9 @@ class ExcelExporter:
                 # Автоподбор ширины колонок
                 for column in ws.columns:
                     max_length = 0
-                    column_letter = getattr(column[0], "column_letter", None)
-                    if column_letter:
+                    first_cell = column[0]
+                    if hasattr(first_cell, 'column_letter') and first_cell.column_letter:
+                        column_letter = first_cell.column_letter
                         for cell in column:
                             try:
                                 if cell.value and len(str(cell.value)) > max_length:

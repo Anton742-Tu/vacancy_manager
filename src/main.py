@@ -1,19 +1,14 @@
-import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from config.settings import LOG_FORMAT, LOG_LEVEL, MAX_VACANCIES_PER_REQUEST
+from config.settings import MAX_VACANCIES_PER_REQUEST
 
 from .core.api_client import HHruAPIClient
 from .core.data_manager import DataManager
-from .core.models import Salary, Vacancy  # Явно импортируем из core.models
+from .core.models import Salary, Vacancy
 from .utils.exporters import CSVExporter, ExcelExporter, JSONExporter
 from .utils.filters import VacancyFilter
-
-# Настройка логирования
-logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
-logger = logging.getLogger(__name__)
 
 
 class VacancyManager:
@@ -30,8 +25,8 @@ class VacancyManager:
         if count > MAX_VACANCIES_PER_REQUEST:
             count = MAX_VACANCIES_PER_REQUEST
 
-        vacancies = self.api_client.search_vacancies(query, per_page=count)
-        return self.data_manager.add_vacancies(vacancies)
+        vacancies = self.api_client.get_vacancies(query, per_page=count)
+        return self.data_manager.add_vacancies(vacancies)  # Используем старый метод
 
     def add_manual_vacancy(self, vacancy_data: Dict[str, Any]) -> bool:
         """Добавление ручной вакансии"""
@@ -66,11 +61,12 @@ class VacancyManager:
 
     def get_vacancies(self, filters: Optional[Dict[str, Any]] = None) -> List[Vacancy]:
         """Получение вакансий с фильтрацией"""
-        vacancies = self.data_manager.get_all_vacancies()
+        vacancies = self.data_manager.get_all_vacancies()  # Используем новый метод
 
         if not filters:
             return vacancies
 
+        # Применяем фильтры
         filtered_vacancies = vacancies
 
         if "company" in filters:
@@ -91,7 +87,7 @@ class VacancyManager:
         return filtered_vacancies
 
     def delete_vacancy(self, vacancy_id: str) -> bool:
-        """Удаление вакансии"""
+        """Удаление вакансий"""
         return self.data_manager.delete_vacancy(vacancy_id)
 
     def clear_all_vacancies(self) -> None:
@@ -139,3 +135,7 @@ class VacancyManager:
         }
 
         return stats
+
+
+def logger():
+    return None

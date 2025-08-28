@@ -6,12 +6,13 @@ import requests
 
 from config.settings import HH_API_AREA_RUSSIA, HH_API_BASE_URL, HH_API_TIMEOUT, HH_API_USER_AGENT
 
-from .models import Salary, Vacancy  # Явно импортируем Salary из models
+from .abc_api import BaseAPIClient
+from .models import Salary, Vacancy
 
 logger = logging.getLogger(__name__)
 
 
-class HHruAPIClient:
+class HHruAPIClient(BaseAPIClient):
     def __init__(self):
         self.base_url = HH_API_BASE_URL
         self.timeout = HH_API_TIMEOUT
@@ -22,6 +23,52 @@ class HHruAPIClient:
                 "Accept": "application/json",
             }
         )
+        self._connected = False
+
+    def connect(self) -> None:
+        """Подключение к API"""
+        if not self._connected:
+            try:
+                # Проверяем соединение простым запросом
+                test_response = self.session.get(self.base_url, params={"text": "test"}, timeout=5)
+                test_response.raise_for_status()
+                self._connected = True
+                logger.info("Успешное подключение к API HH.ru")
+            except Exception as e:
+                logger.error(f"Ошибка подключения к API HH.ru: {e}")
+                raise ConnectionError(f"Не удалось подключиться к API HH.ru: {e}")
+
+    def get_vacancies(self, query: str, **kwargs) -> List[Vacancy]:
+        """Получение вакансий по запросу"""
+        self.connect()  # Убеждаемся, что подключены
+
+        area = kwargs.get("area", HH_API_AREA_RUSSIA)
+        per_page = kwargs.get("per_page", 50)
+        page = kwargs.get("page", 0)
+
+        params: Dict[str, Any] = {"text": query, "area": area, "per_page": per_page, "page": page}
+
+        logger.info(f"Поиск вакансий: '{query}', страница {page}")
+        start_time = time.time()
+
+        try:
+            response = self.session.get(self.base_url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+
+            data = response.json()
+            vacancies = self._parse_vacancies(data.get("items", []))
+
+            elapsed = time.time() - start_time
+            logger.info(f"Найдено {len(vacancies)} вакансий за {elapsed:.2f} сек")
+
+            return vacancies
+
+        except requests.RequestException as e:
+            logger.error(f"Ошибка при запросе к API hh.ru: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка: {e}")
+            return []
 
     def search_vacancies(
         self, query: str, area: int = HH_API_AREA_RUSSIA, per_page: int = 50, page: int = 0

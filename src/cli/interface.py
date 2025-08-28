@@ -1,10 +1,14 @@
+import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
-from config.settings import DISPLAY_WIDTH, EMOJIS, MESSAGES
-from src.core.models import Vacancy  # Добавляем импорт для типизации
-from src.main import VacancyManager, logger
+from config.settings import MESSAGES, EMOJIS, DISPLAY_WIDTH
+from src.main import VacancyManager
+from src.core.models import Vacancy
 
+
+# Добавляем логгер
+logger = logging.getLogger(__name__)
 
 def display_vacancy(vacancy: Vacancy) -> None:
     """Отображение одной вакансии"""
@@ -116,6 +120,7 @@ def run_cli() -> None:
                     print(f"✅ Добавлено {added_count} новых вакансий")
 
             except Exception as e:
+                # Исправляем здесь: используем logger вместо input.error
                 logger.error(f"Ошибка при поиске вакансий: {e}")
                 print(MESSAGES["error_api"].format(e))
                 print("💡 Попробуйте другой поисковый запрос или проверьте соединение с интернетом")
@@ -129,6 +134,7 @@ def run_cli() -> None:
                 else:
                     print("❌ Ошибка при добавлении вакансии")
             except Exception as e:
+                logger.error(f"Ошибка при добавлении вакансии: {e}")
                 print(MESSAGES["error_general"].format(e))
 
         elif choice == "3":
