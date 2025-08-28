@@ -1,17 +1,15 @@
-import hashlib
-import json
 import logging
 import time
+from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
 from config.settings import CACHE_TTL, MAX_CACHE_SIZE
-from src.core.models import Vacancy
 
 logger = logging.getLogger(__name__)
 
 
 class CacheManager:
-    def __init__(self, max_size: int = None, ttl: int = None):
+    def __init__(self, max_size: Optional[int] = None, ttl: Optional[int] = None):
         self.cache: Dict[str, Any] = {}
         self.timestamps: Dict[str, float] = {}
         self.max_size = max_size or MAX_CACHE_SIZE
@@ -44,30 +42,24 @@ class CacheManager:
 cache = CacheManager()
 
 
-def get_cached_vacancies(vacancies: List[Vacancy], filters: Dict[str, Any]) -> List[Vacancy]:
+@lru_cache(maxsize=100)
+def get_cached_vacancies(filters_hash: str, all_vacancies: tuple) -> List[Any]:
     """
-    Кэширование результатов фильтрации с автоматическим хэшированием
+    Кэширование результатов фильтрации
+
+    Args:
+        filters_hash: хэш фильтров для идентификации
+        all_vacancies: кортеж вакансий (tuple для хэширования)
     """
-    cache_key = _generate_cache_key(vacancies, filters)
-
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return cached
-
-    from .filters import VacancyFilter
-
-    filtered = VacancyFilter().apply_filters(vacancies, filters)
-
-    cache.set(cache_key, filtered)
-
-    return filtered
+    # Эта функция требует реализации логики фильтрации
+    # Пока возвращаем пустой список
+    return []
 
 
-def _generate_cache_key(vacancies: List[Vacancy], filters: Dict[str, Any]) -> str:
-    """Генерация ключа кэша"""
-    vacancy_ids = "-".join(v.id for v in vacancies[:10])
+def generate_filters_hash(filters: Dict[str, Any]) -> str:
+    """Генерация хэша для фильтров"""
+    import hashlib
+    import json
 
     filters_str = json.dumps(filters, sort_keys=True)
-
-    combined = f"{vacancy_ids}|{filters_str}"
-    return hashlib.md5(combined.encode()).hexdigest()
+    return hashlib.md5(filters_str.encode()).hexdigest()

@@ -1,10 +1,12 @@
-from typing import Any, Dict
+from datetime import datetime
+from typing import Any, Dict, List
 
 from config.settings import DISPLAY_WIDTH, EMOJIS, MESSAGES
+from src.core.models import Vacancy  # Добавляем импорт для типизации
 from src.main import VacancyManager
 
 
-def display_vacancy(vacancy) -> None:
+def display_vacancy(vacancy: Vacancy) -> None:
     """Отображение одной вакансии"""
     salary = vacancy.salary
     salary_str = "Не указана"
@@ -26,7 +28,7 @@ def display_vacancy(vacancy) -> None:
     print("-" * DISPLAY_WIDTH)
 
 
-def display_vacancies(vacancies) -> None:
+def display_vacancies(vacancies: List[Vacancy]) -> None:
     """Отображение списка вакансий"""
     if not vacancies:
         print(MESSAGES["no_vacancies"])
@@ -38,11 +40,38 @@ def display_vacancies(vacancies) -> None:
         display_vacancy(vacancy)
 
 
-def get_manual_vacancy_input():
-    pass
+def get_manual_vacancy_input() -> Dict[str, Any]:
+    """Получение данных для ручного добавления вакансии"""
+    print("\n📝 Добавление вакансии вручную")
+    print("=" * 50)
+
+    vacancy_data: Dict[str, Any] = {
+        "name": input("Название вакансии: ").strip(),
+        "company": input("Компания: ").strip(),
+        "area": input("Город: ").strip(),
+        "url": input("Ссылка на вакансию: ").strip(),
+        "experience": input("Требуемый опыт: ").strip(),
+        "employment": input("Тип занятости: ").strip(),
+        "snippet": input("Описание: ").strip(),
+        "published_at": datetime.now().isoformat(),
+        "salary": {},
+    }
+
+    # Данные о зарплате
+    salary_from = input("Зарплата от (или Enter чтобы пропустить): ").strip()
+    salary_to = input("Зарплата до (или Enter чтобы пропустить): ").strip()
+    currency = input("Валюта (RUB/USD/EUR, по умолчанию RUB): ").strip() or "RUB"
+
+    if salary_from:
+        vacancy_data["salary"]["from"] = int(salary_from)
+    if salary_to:
+        vacancy_data["salary"]["to"] = int(salary_to)
+    vacancy_data["salary"]["currency"] = currency
+
+    return vacancy_data
 
 
-def run_cli():
+def run_cli() -> None:
     """Запуск CLI интерфейса"""
     print(MESSAGES["welcome"])
     print("=" * DISPLAY_WIDTH)
@@ -90,14 +119,14 @@ def run_cli():
                 vacancy_data = get_manual_vacancy_input()
                 success = manager.add_manual_vacancy(vacancy_data)
                 if success:
-                    print("✅ Вакансия успешно добавлена!")
+                    print(MESSAGES["vacancy_added"])
                 else:
                     print("❌ Ошибка при добавлении вакансии")
             except Exception as e:
-                print(f"❌ Ошибка: {e}")
+                print(MESSAGES["error_general"].format(e))
 
         elif choice == "3":
-            vacancies = manager.get_vacancies()
+            vacancies: List[Vacancy] = manager.get_vacancies()
             display_vacancies(vacancies)
 
         elif choice == "4":
@@ -124,16 +153,17 @@ def run_cli():
             if employment:
                 filters["employment"] = employment
 
-            filtered_vacancies = manager.get_vacancies(filters)
-            display_vacancies(filtered_vacancies)
+            filtered_results: List[Vacancy] = manager.get_vacancies(filters)
+            display_vacancies(filtered_results)
+
 
         elif choice == "5":
-            vacancies = manager.get_vacancies()
-            if not vacancies:
+            all_vacancies: List[Vacancy] = manager.get_vacancies()  # Меняем имя переменной
+            if not all_vacancies:
                 print("❌ Нет вакансий для удаления")
                 continue
 
-            display_vacancies(vacancies)
+            display_vacancies(all_vacancies)
             try:
                 idx_input = input("\nНомер вакансии для удаления: ").strip()
                 if not idx_input.isdigit():
@@ -141,10 +171,10 @@ def run_cli():
                     continue
 
                 idx = int(idx_input) - 1
-                if 0 <= idx < len(vacancies):
-                    vacancy_id = vacancies[idx].id
+                if 0 <= idx < len(all_vacancies):
+                    vacancy_id = all_vacancies[idx].id
                     if manager.delete_vacancy(vacancy_id):
-                        print("✅ Вакансия удалена!")
+                        print(MESSAGES["vacancy_deleted"])
                     else:
                         print("❌ Вакансия не найдена!")
                 else:
@@ -161,28 +191,28 @@ def run_cli():
                     filename += ".xlsx"
 
                 filepath = manager.export_to_excel(filename)
-                print(f"✅ Данные экспортированы в: {filepath}")
+                print(MESSAGES["export_success"].format(filepath))
             except Exception as e:
-                print(f"❌ Ошибка при экспорте: {e}")
+                print(MESSAGES["error_export"].format(e))
 
         elif choice == "7":
             try:
                 filename = input("Имя файла (по умолчанию vacancies.csv): ").strip()
                 filename = filename if filename else "vacancies.csv"
                 filepath = manager.export_to_csv(filename)
-                print(f"✅ Данные экспортированы в CSV: {filepath}")
+                print(MESSAGES["export_success"].format(filepath))
                 print("💡 Совет: Откройте файл в Excel с указанием кодировки UTF-8")
             except Exception as e:
-                print(f"❌ Ошибка при экспорте в CSV: {e}")
+                print(MESSAGES["error_export"].format(e))
 
         elif choice == "8":
             try:
                 filename = input("Имя файла (по умолчанию vacancies.json): ").strip()
                 filename = filename if filename else "vacancies.json"
                 filepath = manager.export_to_json(filename)
-                print(f"✅ Данные экспортированы в JSON: {filepath}")
+                print(MESSAGES["export_success"].format(filepath))
             except Exception as e:
-                print(f"❌ Ошибка при экспорте в JSON: {e}")
+                print(MESSAGES["error_export"].format(e))
 
         elif choice == "9":
             stats = manager.get_statistics()
@@ -208,7 +238,7 @@ def run_cli():
             confirm = input("❌ Вы уверены? Это удалит ВСЕ вакансии! (y/n): ").strip().lower()
             if confirm == "y":
                 manager.clear_all_vacancies()
-                print("✅ Все вакансии удалены!")
+                print(MESSAGES["all_cleared"])
             else:
                 print("Отменено")
 
