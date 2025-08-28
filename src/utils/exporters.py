@@ -5,16 +5,10 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font
+from openpyxl.styles import Font, Alignment
 
-from config.settings import (
-    CSV_SEPARATOR,
-    DEFAULT_CSV_FILENAME,
-    DEFAULT_EXCEL_FILENAME,
-    DEFAULT_JSON_FILENAME,
-    EXPORTS_DIR,
-)
-
+from config.settings import EXPORTS_DIR, DEFAULT_EXCEL_FILENAME, DEFAULT_CSV_FILENAME, DEFAULT_JSON_FILENAME, \
+    CSV_SEPARATOR
 from ..core.models import Vacancy
 
 logger = logging.getLogger(__name__)
@@ -47,7 +41,7 @@ class ExcelExporter:
                 for col_idx, header in enumerate(headers, 1):
                     cell = ws.cell(row=1, column=col_idx, value=header)
                     cell.font = Font(bold=True)
-                    cell.alignment = Alignment(horizontal="center")
+                    cell.alignment = Alignment(horizontal='center')
 
                 # Данные
                 for row_idx, row_data in enumerate(data, 2):
@@ -58,13 +52,14 @@ class ExcelExporter:
                 for column in ws.columns:
                     max_length = 0
                     first_cell = column[0]
-                    if hasattr(first_cell, "column_letter") and first_cell.column_letter:
+                    if hasattr(first_cell, 'column_letter') and first_cell.column_letter:
                         column_letter = first_cell.column_letter
                         for cell in column:
                             try:
                                 if cell.value and len(str(cell.value)) > max_length:
                                     max_length = len(str(cell.value))
-                            except:
+                            except (ValueError, TypeError, AttributeError):
+                                # Конкретные исключения вместо bare except
                                 pass
                         adjusted_width = min(max_length + 2, 50)
                         ws.column_dimensions[column_letter].width = adjusted_width
@@ -93,23 +88,21 @@ class ExcelExporter:
             experience = self._clean_text(vacancy.experience) if vacancy.experience else ""
             employment = self._clean_text(vacancy.employment) if vacancy.employment else ""
 
-            data.append(
-                {
-                    "ID": vacancy.id,
-                    "Название": self._clean_text(vacancy.name),
-                    "Компания": self._clean_text(vacancy.company),
-                    "Зарплата от": salary_from,
-                    "Зарплата до": salary_to,
-                    "Валюта": currency,
-                    "Город": self._clean_text(vacancy.area),
-                    "Опыт": experience,
-                    "Тип занятости": employment,
-                    "Ссылка": vacancy.url,
-                    "Источник": vacancy.source,
-                    "Описание": snippet,
-                    "Дата публикации": vacancy.published_at,
-                }
-            )
+            data.append({
+                "ID": vacancy.id,
+                "Название": self._clean_text(vacancy.name),
+                "Компания": self._clean_text(vacancy.company),
+                "Зарплата от": salary_from,
+                "Зарплата до": salary_to,
+                "Валюта": currency,
+                "Город": self._clean_text(vacancy.area),
+                "Опыт": experience,
+                "Тип занятости": employment,
+                "Ссылка": vacancy.url,
+                "Источник": vacancy.source,
+                "Описание": snippet,
+                "Дата публикации": vacancy.published_at,
+            })
         return data
 
     def _clean_text(self, text: str) -> str:
@@ -119,14 +112,13 @@ class ExcelExporter:
 
         # Удаляем HTML теги
         import re
-
-        clean_text = re.sub(r"<[^>]+>", "", text)
+        clean_text = re.sub(r'<[^>]+>', '', text)
 
         # Заменяем HTML entities
-        clean_text = clean_text.replace("&nbsp;", " ").replace("&amp;", "&")
+        clean_text = clean_text.replace('&nbsp;', ' ').replace('&amp;', '&')
 
         # Удаляем лишние пробелы
-        clean_text = " ".join(clean_text.split())
+        clean_text = ' '.join(clean_text.split())
 
         return clean_text
 
@@ -147,7 +139,7 @@ class CSVExporter:
             filepath = EXPORTS_DIR / filename
 
             # Используем encoding='utf-8-sig' для корректного отображения в Excel
-            df.to_csv(filepath, index=False, encoding="utf-8-sig", sep=CSV_SEPARATOR)
+            df.to_csv(filepath, index=False, encoding='utf-8-sig', sep=CSV_SEPARATOR)
 
             elapsed = time.time() - start_time
             logger.info(f"CSV экспорт завершен за {elapsed:.2f} сек")
@@ -165,21 +157,19 @@ class CSVExporter:
             salary_to = vacancy.salary.to_amount if vacancy.salary else None
             currency = vacancy.salary.currency if vacancy.salary else None
 
-            data.append(
-                {
-                    "ID": vacancy.id,
-                    "Название": vacancy.name,
-                    "Компания": vacancy.company,
-                    "Зарплата от": salary_from,
-                    "Зарплата до": salary_to,
-                    "Валюта": currency,
-                    "Город": vacancy.area,
-                    "Опыт": vacancy.experience,
-                    "Тип занятости": vacancy.employment,
-                    "Ссылка": vacancy.url,
-                    "Источник": vacancy.source,
-                }
-            )
+            data.append({
+                "ID": vacancy.id,
+                "Название": vacancy.name,
+                "Компания": vacancy.company,
+                "Зарплата от": salary_from,
+                "Зарплата до": salary_to,
+                "Валюта": currency,
+                "Город": vacancy.area,
+                "Опыт": vacancy.experience,
+                "Тип занятости": vacancy.employment,
+                "Ссылка": vacancy.url,
+                "Источник": vacancy.source,
+            })
         return data
 
 
