@@ -2,13 +2,13 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
-from config.settings import MESSAGES, EMOJIS, DISPLAY_WIDTH
-from src.main import VacancyManager
+from config.settings import DISPLAY_WIDTH, EMOJIS, MESSAGES
 from src.core.models import Vacancy
-
+from src.main import VacancyManager
 
 # Добавляем логгер
 logger = logging.getLogger(__name__)
+
 
 def display_vacancy(vacancy: Vacancy) -> None:
     """Отображение одной вакансии"""
