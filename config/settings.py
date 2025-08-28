@@ -18,6 +18,10 @@ HH_API_TIMEOUT = 30
 HH_API_AREA_RUSSIA = 113  # Код России в HH API
 HH_API_USER_AGENT = "VacancyManager/1.0 (Tumashovster@Gmail.com)"
 
+# Настройки логирования
+LOG_LEVEL = "INFO"  # Можете изменить на "DEBUG" для детального логирования
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
 # Лимиты
 MAX_VACANCIES_PER_REQUEST = 100
 MAX_CACHE_SIZE = 1000

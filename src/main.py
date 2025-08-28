@@ -10,6 +10,13 @@ from .core.models import Salary, Vacancy
 from .utils.exporters import CSVExporter, ExcelExporter, JSONExporter
 from .utils.filters import VacancyFilter
 
+import logging
+from config.settings import LOG_LEVEL, LOG_FORMAT
+
+# Настройка логирования
+logging.basicConfig(level=LOG_LEVEL, format=LOG_FORMAT)
+logger = logging.getLogger(__name__)
+
 
 class VacancyManager:
     def __init__(self, data_file: Optional[Path] = None):
